@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Canchitas El Limón — Gestión de turnos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#E9E6E7;
+    --surface:#FFFFFF;
+    --surface-2:#F3F1F0;
+    --ink:#332E2C;
+    --ink-soft:#5E5653;
+    --ink-faint:#7B7F8A;
+    --pitch:#6B7C98;
+    --pitch-deep:#5E5653;
+    --pitch-light:#8998B6;
+    --gold:#AB978C;
+    --gold-deep:#40921f;
+    --line:#DCD8D6;
+    --line-strong:#C7C2BE;
+    --blue:#47597D;
+    --gray:#7B7F8A;
+    --red:#A45C4F;
+    --radius-s:6px;
+    --radius-m:10px;
+    --radius-l:16px;
+    --shadow-card:0 1px 2px rgba(51,46,44,.08), 0 1px 1px rgba(51,46,44,.05);
+    --font-display:'Barlow Condensed', 'Arial Narrow', sans-serif;
+    --font-body:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --sidebar-w:236px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1E1C1B;
+      --surface:#272423;
+      --surface-2:#302C2A;
+      --ink:#EDEAE8;
+      --ink-soft:#B9B4AE;
+      --ink-faint:#8B8F98;
+      --line:#3A3634;
+      --line-strong:#4A4442;
+      --pitch:#8998B6;
+      --pitch-light:#A9B6CC;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1E1C1B;
+    --surface:#272423;
+    --surface-2:#302C2A;
+    --ink:#EDEAE8;
+    --ink-soft:#B9B4AE;
+    --ink-faint:#8B8F98;
+    --line:#3A3634;
+    --line-strong:#4A4442;
+    --pitch:#8998B6;
+    --pitch-light:#A9B6CC;
+    color-scheme: dark;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    -webkit-font-smoothing:antialiased;
+  }
+  button{ font-family:inherit; }
+  h1,h2,h3,h4{ margin:0; font-family:var(--font-display); font-weight:600; letter-spacing:.2px; }
+  ::selection{ background:var(--gold); color:var(--pitch-deep); }
+  a{ color:inherit; }
+  input,select,textarea{
+    font-family:var(--font-body);
+    font-size:14px;
+    color:var(--ink);
+    background:var(--surface);
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius-s);
+    padding:9px 11px;
+    width:100%;
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  input:focus,select:focus,textarea:focus{ border-color:var(--pitch-light); box-shadow:0 0 0 3px rgba(47,122,74,.15); }
+  textarea{ resize:vertical; min-height:64px; }
+  label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:5px; }
+  .field{ margin-bottom:14px; }
+  .field-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  /* ---------- App shell ---------- */
+  #app{ display:flex; min-height:100%; }
+
+  .sidebar{
+    width:var(--sidebar-w);
+    flex-shrink:0;
+    background:var(--pitch-deep);
+    color:#EFF5EF;
+    display:flex;
+    flex-direction:column;
+    position:sticky;
+    top:0;
+    height:100vh;
+    padding: calc(20px + env(safe-area-inset-top,0px)) 0 20px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    padding:0 20px 22px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    margin-bottom:14px;
+  }
+  .brand-mark{
+    width:34px; height:34px; border-radius:9px;
+    background:var(--gold); color:var(--pitch-deep);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:700; font-size:18px;
+    overflow:hidden; flex-shrink:0;
+  }
+  .brand-mark img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .brand-text{ font-family:var(--font-display); font-size:20px; font-weight:600; line-height:1.1; }
+  .brand-sub{ font-size:11px; color:#B9CBB9; letter-spacing:.3px; }
+
+  .nav{ list-style:none; margin:0; padding:0 10px; flex:1; }
+  .nav li{ margin-bottom:2px; }
+  .nav button{
+    width:100%; display:flex; align-items:center; gap:11px;
+    background:transparent; border:none; color:#D7E4D6;
+    padding:10px 12px; border-radius:8px; cursor:pointer;
+    font-size:14.5px; font-weight:500; text-align:left;
+  }
+  .nav button:hover{ background:rgba(255,255,255,.06); color:#fff; }
+  .nav button.active{ background:var(--gold); color:var(--pitch-deep); font-weight:600; }
+  .nav svg{ width:18px; height:18px; flex-shrink:0; }
+  .sidebar-foot{ padding:14px 20px 0; border-top:1px solid rgba(255,255,255,.08); margin-top:10px; }
+  .sidebar-foot p{ font-size:11.5px; color:#9DB39C; margin:10px 0 0; line-height:1.4; }
+
+  .main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:20px 28px; border-bottom:1px solid var(--line);
+    position:sticky; top:0; background:var(--bg); z-index:5;
+    padding-top: calc(20px + env(safe-area-inset-top,0px));
+  }
+  .topbar-title h1{ font-size:26px; color:var(--ink); }
+  .topbar-title p{ margin:2px 0 0; font-size:13px; color:var(--ink-soft); }
+  .topbar-actions{ display:flex; gap:10px; align-items:center; }
+  .search-box{ position:relative; }
+  .search-box input{ width:220px; padding-left:32px; }
+  .search-box svg{ position:absolute; left:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--ink-faint); }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:7px;
+    padding:9px 15px; border-radius:8px; border:1px solid var(--line-strong);
+    background:var(--surface); color:var(--ink); font-weight:600; font-size:13.5px;
+    cursor:pointer; white-space:nowrap;
+  }
+  .btn:hover{ border-color:var(--ink-faint); }
+  .btn-primary{ background:var(--pitch); border-color:var(--pitch); color:#fff; }
+  .btn-primary:hover{ background:var(--pitch-light); border-color:var(--pitch-light); }
+  .btn-ghost{ background:transparent; border-color:transparent; }
+  .btn-danger{ color:var(--red); border-color:var(--line-strong); background:var(--surface); }
+  .btn-danger:hover{ border-color:var(--red); }
+  .btn-sm{ padding:6px 10px; font-size:12.5px; border-radius:7px; }
+  .btn svg{ width:15px; height:15px; }
+  .icon-btn{ background:transparent; border:1px solid var(--line-strong); border-radius:7px; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-soft); }
+  .icon-btn:hover{ color:var(--ink); border-color:var(--ink-faint); }
+  .icon-btn svg{ width:15px; height:15px; }
+
+  .content{ padding:24px 28px 60px; max-width:1280px; width:100%; margin:0 auto; }
+
+  /* ---------- Dashboard ---------- */
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:14px; margin-bottom:26px; }
+  .stat-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px 18px; box-shadow:var(--shadow-card); }
+  .stat-card .num{ font-family:var(--font-display); font-size:38px; line-height:1; font-weight:600; color:var(--pitch); }
+  .stat-card.gold .num{ color:var(--gold-deep); }
+  .stat-card .lbl{ font-size:12.5px; color:var(--ink-soft); margin-top:6px; font-weight:500; }
+
+  .panel{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-m); box-shadow:var(--shadow-card); margin-bottom:22px; overflow:hidden; }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid var(--line); }
+  .panel-head h3{ font-size:18px; }
+  .panel-body{ padding:6px 0; }
+  .empty-state{ padding:38px 20px; text-align:center; color:var(--ink-soft); }
+  .empty-state svg{ width:36px; height:36px; color:var(--ink-faint); margin-bottom:10px; }
+  .empty-state p{ margin:2px 0; font-size:13.5px; }
+  .empty-state .empty-title{ font-weight:600; color:var(--ink); font-size:14.5px; }
+
+  .upcoming-row{ display:flex; align-items:center; gap:14px; padding:12px 18px; border-bottom:1px solid var(--line); }
+  .upcoming-row:last-child{ border-bottom:none; }
+  .upcoming-when{ font-family:var(--font-display); font-size:15px; font-weight:600; width:118px; flex-shrink:0; color:var(--pitch); }
+  .upcoming-when span{ display:block; font-family:var(--font-body); font-size:11px; font-weight:500; color:var(--ink-faint); }
+  .upcoming-mid{ flex:1; min-width:0; }
+  .upcoming-mid .teams{ font-weight:600; font-size:14px; }
+  .upcoming-mid .meta{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
+
+  /* ---------- Badges ---------- */
+  .badge{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:99px; font-size:11.5px; font-weight:600; letter-spacing:.1px; }
+  .badge::before{ content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .badge-disponible{ background:rgba(47,122,74,.12); color:var(--pitch-light); }
+  .badge-reservado{ background:rgba(217,164,65,.16); color:var(--gold-deep); }
+  .badge-confirmado{ background:rgba(59,110,165,.13); color:var(--blue); }
+  .badge-finalizado{ background:rgba(139,138,130,.15); color:var(--gray); }
+  .badge-cancelado{ background:rgba(181,69,58,.12); color:var(--red); }
+
+  /* ---------- Tables ---------- */
+  .table-wrap{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:760px; }
+  th{ text-align:left; font-size:11.5px; text-transform:none; color:var(--ink-soft); font-weight:600; padding:10px 16px; border-bottom:1px solid var(--line); background:var(--surface-2); white-space:nowrap; }
+  td{ padding:11px 16px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tbody tr:hover{ background:var(--surface-2); }
+  tbody tr:last-child td{ border-bottom:none; }
+  .cell-actions{ display:flex; gap:6px; justify-content:flex-end; }
+  .mono-small{ font-size:12px; color:var(--ink-faint); }
+  .team-vs{ font-weight:600; }
+  .team-vs .vs{ color:var(--ink-faint); font-weight:500; margin:0 4px; }
+
+  /* ---------- Filters ---------- */
+  .filter-bar{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; align-items:flex-end; }
+  .filter-bar .field{ margin-bottom:0; min-width:140px; }
+  .filter-bar label{ margin-bottom:4px; }
+  .filter-clear{ margin-left:auto; }
+
+  /* ---------- Cards grid (canchas / equipos) ---------- */
+  .card-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:14px; }
+  .item-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-m); padding:16px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; gap:8px; }
+  .item-card-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .item-card-head h4{ font-size:19px; }
+  .item-card .sub{ font-size:12.5px; color:var(--ink-soft); }
+  .item-card .row{ display:flex; justify-content:space-between; font-size:13px; padding:3px 0; }
+  .item-card .row .k{ color:var(--ink-soft); }
+  .item-card .actions{ display:flex; gap:6px; margin-top:8px; }
+
+  /* ---------- Weekly schedule (scoreboard style) ---------- */
+  .week-board{ background:var(--pitch-deep); border-radius:var(--radius-l); padding:18px; color:#EAF2EA; }
+  .week-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:10px; flex-wrap:wrap; }
+  .week-nav .label{ font-family:var(--font-display); font-size:20px; font-weight:600; color:#fff; }
+  .week-nav-btns{ display:flex; gap:8px; }
+  .week-nav-btns button{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:#EAF2EA; border-radius:7px; padding:7px 12px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .week-nav-btns button:hover{ background:rgba(255,255,255,.16); }
+  .week-grid{ display:grid; grid-template-columns:repeat(7,minmax(150px,1fr)); gap:10px; overflow-x:auto; }
+  .day-col{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:10px; min-width:150px; }
+  .day-col.today{ border-color:var(--gold); background:rgba(217,164,65,.08); }
+  .day-col-head{ font-family:var(--font-display); font-size:15px; font-weight:600; display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,.1); }
+  .day-col-head span{ font-family:var(--font-body); font-size:11px; color:#AFC3AE; font-weight:500; }
+  .cancha-block{ margin-bottom:10px; }
+  .cancha-block:last-child{ margin-bottom:0; }
+  .cancha-block-title{ font-size:11px; letter-spacing:.2px; color:#BFD1BE; font-weight:600; margin-bottom:5px; }
+  .slot{ display:flex; justify-content:space-between; align-items:center; padding:5px 7px; border-radius:6px; font-size:11.5px; margin-bottom:3px; cursor:default; }
+  .slot-disponible{ background:rgba(47,122,74,.18); color:#BFE6CC; cursor:pointer; }
+  .slot-disponible:hover{ background:rgba(47,122,74,.32); }
+  .slot-reservado{ background:rgba(217,164,65,.22); color:#F3DBA6; }
+  .slot-confirmado{ background:rgba(59,110,165,.26); color:#BFD6EE; }
+  .slot-finalizado{ background:rgba(139,138,130,.22); color:#D6D5CE; }
+  .slot-cancelado{ background:rgba(181,69,58,.2); color:#F1B8B1; text-decoration:line-through; }
+  .slot .time{ font-weight:600; }
+
+  /* ---------- Modal ---------- */
+  .overlay{ position:fixed; inset:0; background:rgba(15,22,17,.5); display:flex; align-items:flex-start; justify-content:center; padding:5vh 16px; overflow-y:auto; z-index:50; }
+  .modal{ background:var(--surface); border-radius:var(--radius-l); width:100%; max-width:560px; box-shadow:0 20px 50px rgba(0,0,0,.25); margin-bottom:5vh; }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:1px solid var(--line); }
+  .modal-head h3{ font-size:20px; }
+  .modal-body{ padding:20px 22px; max-height:66vh; overflow-y:auto; }
+  .modal-foot{ display:flex; justify-content:flex-end; gap:10px; padding:16px 22px; border-top:1px solid var(--line); }
+  .modal-close{ background:none; border:none; cursor:pointer; color:var(--ink-soft); width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; }
+  .modal-close:hover{ background:var(--surface-2); }
+  .modal-close svg{ width:17px; height:17px; }
+  .warn-banner{ background:rgba(217,164,65,.15); border:1px solid rgba(217,164,65,.4); color:var(--gold-deep); padding:9px 12px; border-radius:8px; font-size:12.5px; margin-bottom:14px; font-weight:600; }
+  .error-banner{ background:rgba(181,69,58,.1); border:1px solid rgba(181,69,58,.35); color:var(--red); padding:9px 12px; border-radius:8px; font-size:12.5px; margin-bottom:14px; font-weight:600; }
+  .confirm-body p{ font-size:14px; color:var(--ink-soft); line-height:1.5; }
+  fieldset{ border:none; padding:0; margin:0 0 16px; }
+  legend{ font-family:var(--font-display); font-size:15px; font-weight:600; color:var(--ink); margin-bottom:8px; padding:0; }
+
+  .toast-wrap{ position:fixed; bottom:20px; right:20px; z-index:80; display:flex; flex-direction:column; gap:8px; padding-bottom: env(safe-area-inset-bottom,0px); }
+  .toast{ background:var(--pitch-deep); color:#fff; padding:11px 16px; border-radius:9px; font-size:13.5px; font-weight:500; box-shadow:0 6px 20px rgba(0,0,0,.25); animation:toastin .18s ease; }
+  .toast.err{ background:var(--red); }
+  @keyframes toastin{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:translateY(0);} }
+
+  .hidden{ display:none !important; }
+
+  /* ---------- Mobile ---------- */
+  .menu-toggle{ display:none; }
+  @media (max-width: 900px){
+    .sidebar{ position:fixed; left:0; top:0; z-index:60; transform:translateX(-100%); transition:transform .2s ease; box-shadow:0 0 40px rgba(0,0,0,.3); }
+    .sidebar.open{ transform:translateX(0); }
+    .menu-toggle{ display:inline-flex; }
+    .topbar{ padding:16px; }
+    .content{ padding:16px 16px 50px; }
+    .search-box input{ width:150px; }
+    .scrim{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:55; }
+  }
+  @media (max-width: 620px){
+    .field-row{ grid-template-columns:1fr; }
+    .topbar-title p{ display:none; }
+    .stat-grid{ grid-template-columns:repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* =========================================================
+   CAPA DE DATOS
+   Interfaz preparada para reemplazar localStorage por una
+   API/base de datos real sin tocar el resto de la app: basta
+   con reescribir los métodos de este objeto.
+   ========================================================= */
+const STORAGE_PREFIX = 'cancha_base_v1__';
+
+const DB = {
+  _read(collection){
+    try{
+      const raw = localStorage.getItem(STORAGE_PREFIX + collection);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ console.error('Error leyendo almacenamiento', e); return null; }
+  },
+  _write(collection, items){
+    try{
+      localStorage.setItem(STORAGE_PREFIX + collection, JSON.stringify(items));
+      return true;
+    }catch(e){ console.error('Error guardando', e); return false; }
+  },
+  getAll(collection){
+    const items = this._read(collection);
+    return items === null ? [] : items;
+  },
+  save(collection, items){ return this._write(collection, items); },
+  create(collection, item){
+    const items = this.getAll(collection);
+    if(!item.id) item.id = 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+    items.push(item);
+    this._write(collection, items);
+    return item;
+  },
+  update(collection, id, patch){
+    const items = this.getAll(collection);
+    const idx = items.findIndex(i => i.id === id);
+    if(idx > -1){ items[idx] = Object.assign({}, items[idx], patch); this._write(collection, items); return items[idx]; }
+    return null;
+  },
+  remove(collection, id){
+    const items = this.getAll(collection).filter(i => i.id !== id);
+    this._write(collection, items);
+  },
+  seedIfEmpty(){
+    if(this._read('_seeded')) return;
+    const canchas = [
+      { id:'c1', nombre:'Cancha 1', numero:1, tipo:'Fútbol 5', capacidad:10, estado:'Disponible' },
+      { id:'c2', nombre:'Cancha 2', numero:2, tipo:'Fútbol 7', capacidad:14, estado:'Disponible' }
+    ];
+    const equipos = [
+      { id:'e1', nombre:'Los Halcones', cantidadJugadores:8, responsable:'Martín Díaz', telefono:'', observaciones:'' },
+      { id:'e2', nombre:'Atlético Barrio', cantidadJugadores:8, responsable:'Sofía Ruiz', telefono:'', observaciones:'' }
+    ];
+    this._write('canchas', canchas);
+    this._write('equipos', equipos);
+    this._write('turnos', []);
+    this._write('_seeded', true);
+  }
+};
+
+/* =========================================================
+   CONFIGURACIÓN (nombre del complejo y logo)
+   ========================================================= */
+const CONFIG_KEY = STORAGE_PREFIX + 'config';
+function getConfig(){
+  try{
+    const raw = localStorage.getItem(CONFIG_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ console.error('Error leyendo configuración', e); }
+  const def = { nombre:'Canchitas El Limón', logoEmoji:'🍋', logoImage:null };
+  try{ localStorage.setItem(CONFIG_KEY, JSON.stringify(def)); }catch(e){}
+  return def;
+}
+function saveConfig(cfg){
+  try{ localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); return true; }
+  catch(e){ console.error('Error guardando configuración', e); return false; }
+}
+
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const ESTADOS = ['Disponible','Reservado','Confirmado','Finalizado','Cancelado'];
+
+function parseISODate(iso){ const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
+function toISODate(date){ return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0'); }
+function nombreDia(iso){ return DIAS[parseISODate(iso).getDay()]; }
+function formatFechaCorta(iso){ const d = parseISODate(iso); return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0'); }
+function timeToMinutes(t){ const [h,m] = t.split(':').map(Number); return h*60+m; }
+function todayISO(){ return toISODate(new Date()); }
+function startOfWeek(date){ const d = new Date(date); const day = (d.getDay()+6)%7; d.setDate(d.getDate()-day); d.setHours(0,0,0,0); return d; }
+function addDays(date,n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+function escapeHtml(str){ return String(str==null?'':str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function estadoBadge(estado){ return `<span class="badge badge-${estado.toLowerCase()}">${estado}</span>`; }
+function uid(){ return 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+function turnosSolapan(fecha, canchaId, horaInicio, horaFin, excludeId){
+  const turnos = DB.getAll('turnos');
+  const nInicio = timeToMinutes(horaInicio), nFin = timeToMinutes(horaFin);
+  return turnos.some(t => {
+    if(t.id === excludeId) return false;
+    if(t.fecha !== fecha || t.canchaId !== canchaId) return false;
+    if(t.estado === 'Cancelado') return false;
+    const eInicio = timeToMinutes(t.horaInicio), eFin = timeToMinutes(t.horaFin);
+    return nInicio < eFin && nFin > eInicio;
+  });
+}
+
+/* =========================================================
+   ICONOS (SVG inline, trazo simple)
+   ========================================================= */
+const ICONS = {
+  dashboard:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="3.5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="3.5" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg>',
+  calendar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="16" rx="2"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg>',
+  pitch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="1.5"/><line x1="12" y1="5" x2="12" y2="19"/><circle cx="12" cy="12" r="2.6"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M16 14.2c2.6.3 4.5 2.5 4.5 5.3"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg>',
+  eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>',
+  menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
+  chevL:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>',
+  chevR:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>',
+  ban:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><line x1="5.5" y1="18.5" x2="18.5" y2="5.5"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1Z"/></svg>',
+  ball:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7.5 15.5 10l-1.3 4H9.8L8.5 10Z"/><path d="M12 7.5V4.2M15.5 10l2.9-1.6M13.5 14l1.8 3M10.5 14l-1.8 3M8.5 10 5.6 8.4"/></svg>'
+};
+
+/* =========================================================
+   ESTADO DE LA APLICACIÓN
+   ========================================================= */
+const state = {
+  view: 'dashboard',
+  search: '',
+  weekStart: startOfWeek(new Date()),
+  filters: { fecha:'', dia:'', cancha:'', estado:'', equipo:'', horario:'' },
+  editingTurno: null,
+  editingCancha: null,
+  editingEquipo: null
+};
+
+DB.seedIfEmpty();
+
+function showToast(msg, isErr){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast' + (isErr ? ' err' : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+/* =========================================================
+   RENDER PRINCIPAL
+   ========================================================= */
+function render(){
+  const cfg = getConfig();
+  document.title = cfg.nombre + ' — Gestión de turnos';
+  const app = document.getElementById('app');
+  const navItems = [
+    { id:'dashboard', label:'Panel principal', icon:ICONS.dashboard },
+    { id:'turnos', label:'Turnos', icon:ICONS.list },
+    { id:'calendario', label:'Vista semanal', icon:ICONS.calendar },
+    { id:'canchas', label:'Canchas', icon:ICONS.pitch },
+    { id:'equipos', label:'Equipos', icon:ICONS.users }
+  ];
+  const titles = {
+    dashboard:['Panel principal','Estado general de la actividad de hoy'],
+    turnos:['Turnos','Registrá, editá y controlá todos los turnos'],
+    calendario:['Vista semanal','Ocupación de cada cancha, día por día'],
+    canchas:['Canchas','Administrá las canchas del predio'],
+    equipos:['Equipos','Equipos habituales y sus responsables']
+  };
+
+  app.innerHTML = `
+    <div class="scrim hidden" id="scrim"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">${cfg.logoImage ? `<img src="${cfg.logoImage}" alt="Logo">` : escapeHtml(cfg.logoEmoji || '⚽')}</div>
+        <div>
+          <div class="brand-text">${escapeHtml(cfg.nombre)}</div>
+          <div class="brand-sub">Gestión de turnos</div>
+        </div>
+      </div>
+      <ul class="nav">
+        ${navItems.map(n => `
+          <li><button data-nav="${n.id}" class="${state.view===n.id ? 'active':''}">${n.icon}<span>${n.label}</span></button></li>
+        `).join('')}
+      </ul>
+      <div class="sidebar-foot">
+        <button data-nav="ajustes" class="btn btn-ghost btn-sm" style="color:#D7E4D6;width:100%;justify-content:flex-start;">${ICONS.settings}<span>Ajustes</span></button>
+        <p>Los datos se guardan en este navegador. Estructura lista para conectar una base de datos.</p>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="icon-btn menu-toggle" id="menuToggle">${ICONS.menu}</button>
+          <div class="topbar-title">
+            <h1>${titles[state.view][0]}</h1>
+            <p>${titles[state.view][1]}</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          ${state.view==='turnos' || state.view==='dashboard' ? `
+          <div class="search-box">${ICONS.search}<input id="searchInput" placeholder="Buscar equipo, cancha, contacto…" value="${escapeHtml(state.search)}"></div>` : ''}
+          ${topbarActionButton()}
+        </div>
+      </div>
+      <div class="content" id="content"></div>
+    </div>
+  `;
+
+  document.querySelectorAll('[data-nav]').forEach(btn => btn.addEventListener('click', () => {
+    state.view = btn.dataset.nav;
+    if(state.view === 'ajustes'){ renderAjustesModal(); state.view = getPreviousMainView(); }
+    closeSidebarMobile();
+    render();
+  }));
+  const menuToggle = document.getElementById('menuToggle');
+  if(menuToggle) menuToggle.addEventListener('click', openSidebarMobile);
+  const scrim = document.getElementById('scrim');
+  if(scrim) scrim.addEventListener('click', closeSidebarMobile);
+
+  const searchInput = document.getElementById('searchInput');
+  if(searchInput){
+    searchInput.addEventListener('input', e => { state.search = e.target.value; renderContent(); });
+  }
+
+  const mainAction = document.getElementById('mainActionBtn');
+  if(mainAction){
+    mainAction.addEventListener('click', () => {
+      if(state.view === 'turnos') openTurnoModal();
+      else if(state.view === 'canchas') openCanchaModal();
+      else if(state.view === 'equipos') openEquipoModal();
+    });
+  }
+
+  renderContent();
+}
+
+let lastMainView = 'dashboard';
+function getPreviousMainView(){ return lastMainView; }
+
+function topbarActionButton(){
+  if(state.view==='turnos') return `<button class="btn btn-primary" id="mainActionBtn">${ICONS.plus}Nuevo turno</button>`;
+  if(state.view==='canchas') return `<button class="btn btn-primary" id="mainActionBtn">${ICONS.plus}Nueva cancha</button>`;
+  if(state.view==='equipos') return `<button class="btn btn-primary" id="mainActionBtn">${ICONS.plus}Nuevo equipo</button>`;
+  return '';
+}
+
+function openSidebarMobile(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('scrim').classList.remove('hidden'); }
+function closeSidebarMobile(){ const s=document.getElementById('sidebar'), sc=document.getElementById('scrim'); if(s) s.classList.remove('open'); if(sc) sc.classList.add('hidden'); }
+
+function renderContent(){
+  if(state.view !== 'ajustes') lastMainView = state.view;
+  const content = document.getElementById('content');
+  if(state.view === 'dashboard') content.innerHTML = renderDashboard();
+  else if(state.view === 'turnos') content.innerHTML = renderTurnos();
+  else if(state.view === 'calendario') content.innerHTML = renderCalendario();
+  else if(state.view === 'canchas') content.innerHTML = renderCanchas();
+  else if(state.view === 'equipos') content.innerHTML = renderEquipos();
+  attachContentHandlers();
+}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+function renderDashboard(){
+  const turnos = DB.getAll('turnos');
+  const canchas = DB.getAll('canchas');
+  const hoy = todayISO();
+  const ws = startOfWeek(new Date());
+  const weDates = [...Array(7)].map((_,i) => toISODate(addDays(ws,i)));
+
+  const turnosHoy = turnos.filter(t => t.fecha === hoy);
+  const turnosSemana = turnos.filter(t => weDates.includes(t.fecha));
+  const canchasDisponibles = canchas.filter(c => c.estado === 'Disponible').length;
+  const totalJugadores = turnos.reduce((sum,t) => sum + (Number(t.cantidadJugadores)||0), 0);
+  const pendientes = turnos.filter(t => t.estado === 'Reservado' || t.estado === 'Confirmado').length;
+  const finalizados = turnos.filter(t => t.estado === 'Finalizado').length;
+
+  const ahora = new Date();
+  const proximo = turnos
+    .filter(t => t.estado !== 'Cancelado' && t.estado !== 'Finalizado')
+    .filter(t => {
+      const dt = parseISODate(t.fecha); dt.setMinutes(dt.getMinutes() + timeToMinutes(t.horaFin));
+      return dt >= ahora;
+    })
+    .sort((a,b) => (a.fecha+a.horaInicio).localeCompare(b.fecha+b.horaInicio))[0];
+
+  const proximos = turnos
+    .filter(t => t.estado !== 'Cancelado')
+    .filter(t => {
+      const dt = parseISODate(t.fecha); dt.setMinutes(dt.getMinutes() + timeToMinutes(t.horaFin));
+      return dt >= ahora;
+    })
+    .sort((a,b) => (a.fecha+a.horaInicio).localeCompare(b.fecha+b.horaInicio))
+    .slice(0,6);
+
+  const q = state.search.trim().toLowerCase();
+  const proximosFiltrados = q ? proximos.filter(t => matchTurnoSearch(t,q)) : proximos;
+
+  return `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="num">${turnosHoy.length}</div><div class="lbl">Turnos hoy</div></div>
+      <div class="stat-card"><div class="num">${turnosSemana.length}</div><div class="lbl">Turnos esta semana</div></div>
+      <div class="stat-card gold"><div class="num">${canchasDisponibles}</div><div class="lbl">Canchas disponibles</div></div>
+      <div class="stat-card"><div class="num">${totalJugadores}</div><div class="lbl">Jugadores registrados</div></div>
+      <div class="stat-card"><div class="num">${pendientes}</div><div class="lbl">Turnos pendientes</div></div>
+      <div class="stat-card"><div class="num">${finalizados}</div><div class="lbl">Turnos finalizados</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Próximo turno</h3>
+      </div>
+      <div class="panel-body">
+        ${proximo ? `
+          <div class="upcoming-row">
+            <div class="upcoming-when">${formatFechaCorta(proximo.fecha)}<span>${nombreDia(proximo.fecha)} · ${proximo.horaInicio}</span></div>
+            <div class="upcoming-mid">
+              <div class="teams">${escapeHtml(proximo.equipo1 || 'Sin equipo')}${proximo.equipo2 ? ' <span class="vs">vs</span> ' + escapeHtml(proximo.equipo2) : ''}</div>
+              <div class="meta">${escapeHtml(canchaNombre(proximo.canchaId))} · ${proximo.cantidadJugadores || '—'} jugadores</div>
+            </div>
+            ${estadoBadge(proximo.estado)}
+          </div>
+        ` : emptyState('No hay próximos turnos', 'Creá un turno nuevo para verlo reflejado acá.')}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Próximos turnos</h3>
+        <button class="btn btn-sm btn-ghost" data-nav-inline="turnos">Ver todos</button>
+      </div>
+      <div class="panel-body">
+        ${proximosFiltrados.length ? proximosFiltrados.map(t => `
+          <div class="upcoming-row">
+            <div class="upcoming-when">${formatFechaCorta(t.fecha)}<span>${nombreDia(t.fecha)} · ${t.horaInicio}–${t.horaFin}</span></div>
+            <div class="upcoming-mid">
+              <div class="teams">${escapeHtml(t.equipo1 || 'Sin equipo')}${t.equipo2 ? ' <span class="vs">vs</span> ' + escapeHtml(t.equipo2) : ''}</div>
+              <div class="meta">${escapeHtml(canchaNombre(t.canchaId))} · ${t.cantidadJugadores || '—'} jugadores</div>
+            </div>
+            ${estadoBadge(t.estado)}
+          </div>
+        `).join('') : emptyState('Sin turnos próximos', 'Todavía no hay turnos cargados para los próximos días.')}
+      </div>
+    </div>
+  `;
+}
+
+function matchTurnoSearch(t,q){
+  return [t.equipo1,t.equipo2,t.contacto,t.observaciones,canchaNombre(t.canchaId)]
+    .some(v => (v||'').toLowerCase().includes(q));
+}
+
+function emptyState(title, sub){
+  return `<div class="empty-state">${ICONS.calendar.replace('<svg','<svg')}<p class="empty-title">${title}</p><p>${sub}</p></div>`;
+}
+
+function canchaNombre(id){ const c = DB.getAll('canchas').find(c => c.id === id); return c ? c.nombre : '—'; }
+function canchaCapacidad(id){ const c = DB.getAll('canchas').find(c => c.id === id); return c ? c.capacidad : null; }
+
+/* =========================================================
+   TURNOS
+   ========================================================= */
+function renderTurnos(){
+  const canchas = DB.getAll('canchas');
+  const equipos = DB.getAll('equipos');
+  let turnos = DB.getAll('turnos').sort((a,b) => (a.fecha+a.horaInicio).localeCompare(b.fecha+b.horaInicio));
+
+  const f = state.filters;
+  const nombresEquipos = Array.from(new Set(
+    [...equipos.map(e=>e.nombre), ...turnos.flatMap(t=>[t.equipo1,t.equipo2])].filter(Boolean)
+  )).sort();
+  const horarios = Array.from(new Set(turnos.map(t=>t.horaInicio))).sort();
+
+  let filtrados = turnos.filter(t => {
+    if(f.fecha && t.fecha !== f.fecha) return false;
+    if(f.dia && nombreDia(t.fecha) !== f.dia) return false;
+    if(f.cancha && t.canchaId !== f.cancha) return false;
+    if(f.estado && t.estado !== f.estado) return false;
+    if(f.equipo && t.equipo1 !== f.equipo && t.equipo2 !== f.equipo) return false;
+    if(f.horario && t.horaInicio !== f.horario) return false;
+    return true;
+  });
+  const q = state.search.trim().toLowerCase();
+  if(q) filtrados = filtrados.filter(t => matchTurnoSearch(t,q));
+
+  const anyFilterActive = f.fecha||f.dia||f.cancha||f.estado||f.equipo||f.horario;
+
+  return `
+    <div class="filter-bar">
+      <div class="field"><label>Fecha</label><input type="date" id="fFecha" value="${f.fecha}"></div>
+      <div class="field"><label>Día</label>
+        <select id="fDia"><option value="">Todos</option>${DIAS_SEMANA.map(d=>`<option value="${d}" ${f.dia===d?'selected':''}>${d}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Cancha</label>
+        <select id="fCancha"><option value="">Todas</option>${canchas.map(c=>`<option value="${c.id}" ${f.cancha===c.id?'selected':''}>${escapeHtml(c.nombre)}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Estado</label>
+        <select id="fEstado"><option value="">Todos</option>${ESTADOS.map(e=>`<option value="${e}" ${f.estado===e?'selected':''}>${e}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Equipo</label>
+        <select id="fEquipo"><option value="">Todos</option>${nombresEquipos.map(e=>`<option value="${escapeHtml(e)}" ${f.equipo===e?'selected':''}>${escapeHtml(e)}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Horario</label>
+        <select id="fHorario"><option value="">Todos</option>${horarios.map(h=>`<option value="${h}" ${f.horario===h?'selected':''}>${h}</option>`).join('')}</select>
+      </div>
+      ${anyFilterActive ? `<button class="btn btn-ghost btn-sm filter-clear" id="clearFilters">Limpiar filtros</button>` : ''}
+    </div>
+
+    <div class="panel">
+      <div class="table-wrap">
+        ${filtrados.length ? `
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Horario</th><th>Cancha</th><th>Equipos</th><th>Jugadores</th><th>Contacto</th><th>Estado</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${filtrados.map(t => `
+              <tr>
+                <td><strong>${formatFechaCorta(t.fecha)}</strong><div class="mono-small">${nombreDia(t.fecha)}</div></td>
+                <td>${t.horaInicio}–${t.horaFin}</td>
+                <td>${escapeHtml(canchaNombre(t.canchaId))}</td>
+                <td class="team-vs">${escapeHtml(t.equipo1||'—')}${t.equipo2?` <span class="vs">vs</span> ${escapeHtml(t.equipo2)}`:''}</td>
+                <td>${t.cantidadJugadores||'—'}</td>
+                <td>${escapeHtml(t.contacto||'—')}</td>
+                <td>${estadoBadge(t.estado)}</td>
+                <td>
+                  <div class="cell-actions">
+                    <button class="icon-btn" data-view-turno="${t.id}" title="Ver">${ICONS.eye}</button>
+                    <button class="icon-btn" data-edit-turno="${t.id}" title="Editar">${ICONS.edit}</button>
+                    <button class="icon-btn" data-delete-turno="${t.id}" title="Eliminar">${ICONS.trash}</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ` : emptyState('No se encontraron turnos', anyFilterActive || q ? 'Probá ajustar los filtros o la búsqueda.' : 'Cargá el primer turno con el botón “Nuevo turno”.')}
+      </div>
+    </div>
+  `;
+}
+
+/* =========================================================
+   CALENDARIO SEMANAL
+   ========================================================= */
+function renderCalendario(){
+  const canchas = DB.getAll('canchas');
+  const turnos = DB.getAll('turnos');
+  const ws = state.weekStart;
+  const weekDates = [...Array(7)].map((_,i) => addDays(ws,i));
+  const rangoLabel = `${formatFechaCorta(toISODate(weekDates[0]))} – ${formatFechaCorta(toISODate(weekDates[6]))}`;
+  const hoy = todayISO();
+
+  const APERTURA = 8, CIERRE = 24;
+  const slots = [];
+  for(let h = APERTURA; h < CIERRE; h++){ slots.push(String(h).padStart(2,'0')+':00'); }
+
+  return `
+    <div class="week-board">
+      <div class="week-nav">
+        <div class="label">${rangoLabel}</div>
+        <div class="week-nav-btns">
+          <button id="weekPrev">${ICONS.chevL}</button>
+          <button id="weekToday">Hoy</button>
+          <button id="weekNext">${ICONS.chevR}</button>
+        </div>
+      </div>
+      <div class="week-grid">
+        ${weekDates.map(d => {
+          const iso = toISODate(d);
+          const isToday = iso === hoy;
+          return `
+          <div class="day-col ${isToday?'today':''}">
+            <div class="day-col-head">${DIAS[d.getDay()]}<span>${formatFechaCorta(iso)}</span></div>
+            ${canchas.length ? canchas.map(c => `
+              <div class="cancha-block">
+                <div class="cancha-block-title">${escapeHtml(c.nombre)}</div>
+                ${slots.map(s => {
+                  const sMin = timeToMinutes(s), sMaxMin = sMin + 60;
+                  const turno = turnos.find(t => t.canchaId === c.id && t.fecha === iso && timeToMinutes(t.horaInicio) <= sMin && timeToMinutes(t.horaFin) >= sMaxMin && t.estado !== 'Cancelado');
+                  const turnoCancelado = !turno && turnos.find(t => t.canchaId === c.id && t.fecha === iso && timeToMinutes(t.horaInicio) <= sMin && timeToMinutes(t.horaFin) >= sMaxMin && t.estado === 'Cancelado');
+                  if(turno && sMin === timeToMinutes(turno.horaInicio)){
+                    return `<div class="slot slot-${turno.estado.toLowerCase()}" data-view-turno="${turno.id}" style="cursor:pointer;"><span class="time">${turno.horaInicio}–${turno.horaFin}</span><span>${turno.estado}</span></div>`;
+                  }
+                  if(turno) return '';
+                  if(turnoCancelado && sMin === timeToMinutes(turnoCancelado.horaInicio)){
+                    return `<div class="slot slot-cancelado" data-view-turno="${turnoCancelado.id}" style="cursor:pointer;"><span class="time">${turnoCancelado.horaInicio}–${turnoCancelado.horaFin}</span><span>Cancelado</span></div>`;
+                  }
+                  if(turnoCancelado) return '';
+                  return `<div class="slot slot-disponible" data-quick-turno="${c.id}|${iso}|${s}"><span class="time">${s}</span><span>Disponible</span></div>`;
+                }).join('')}
+              </div>
+            `).join('') : `<p style="font-size:12px;color:#AFC3AE;">Registrá una cancha primero.</p>`}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* =========================================================
+   CANCHAS
+   ========================================================= */
+function renderCanchas(){
+  const canchas = DB.getAll('canchas');
+  return `
+    ${canchas.length ? `<div class="card-grid">
+      ${canchas.map(c => `
+        <div class="item-card">
+          <div class="item-card-head">
+            <h4>${escapeHtml(c.nombre)}</h4>
+            <span class="badge ${c.estado==='Disponible'?'badge-disponible':'badge-cancelado'}">${c.estado}</span>
+          </div>
+          <div class="sub">Número ${c.numero} · ${escapeHtml(c.tipo)}</div>
+          <div class="row"><span class="k">Capacidad máxima</span><span>${c.capacidad} jugadores</span></div>
+          <div class="actions">
+            <button class="btn btn-sm" data-edit-cancha="${c.id}">${ICONS.edit}Editar</button>
+            <button class="btn btn-sm btn-danger" data-delete-cancha="${c.id}">${ICONS.trash}Eliminar</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>` : emptyState('Todavía no hay canchas', 'Agregá tu primera cancha con el botón “Nueva cancha”.')}
+  `;
+}
+
+/* =========================================================
+   EQUIPOS
+   ========================================================= */
+function renderEquipos(){
+  const equipos = DB.getAll('equipos');
+  return `
+    ${equipos.length ? `<div class="card-grid">
+      ${equipos.map(e => `
+        <div class="item-card">
+          <div class="item-card-head"><h4>${escapeHtml(e.nombre)}</h4></div>
+          <div class="row"><span class="k">Jugadores</span><span>${e.cantidadJugadores||'—'}</span></div>
+          <div class="row"><span class="k">Responsable</span><span>${escapeHtml(e.responsable||'—')}</span></div>
+          <div class="row"><span class="k">Teléfono</span><span>${escapeHtml(e.telefono||'—')}</span></div>
+          ${e.observaciones ? `<div class="sub">${escapeHtml(e.observaciones)}</div>` : ''}
+          <div class="actions">
+            <button class="btn btn-sm" data-edit-equipo="${e.id}">${ICONS.edit}Editar</button>
+            <button class="btn btn-sm btn-danger" data-delete-equipo="${e.id}">${ICONS.trash}Eliminar</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>` : emptyState('Todavía no hay equipos', 'Agregá un equipo con el botón “Nuevo equipo”.')}
+  `;
+}
+
+/* =========================================================
+   HANDLERS DE CONTENIDO
+   ========================================================= */
+function attachContentHandlers(){
+  document.querySelectorAll('[data-nav-inline]').forEach(b => b.addEventListener('click', () => { state.view = b.dataset.navInline; render(); }));
+
+  // Turnos
+  document.querySelectorAll('[data-view-turno]').forEach(b => b.addEventListener('click', () => openTurnoDetalle(b.dataset.viewTurno)));
+  document.querySelectorAll('[data-edit-turno]').forEach(b => b.addEventListener('click', () => openTurnoModal(b.dataset.editTurno)));
+  document.querySelectorAll('[data-delete-turno]').forEach(b => b.addEventListener('click', () => confirmDeleteTurno(b.dataset.deleteTurno)));
+  document.querySelectorAll('[data-quick-turno]').forEach(b => b.addEventListener('click', () => {
+    const [canchaId, fecha, hora] = b.dataset.quickTurno.split('|');
+    openTurnoModal(null, { canchaId, fecha, horaInicio: hora });
+  }));
+
+  // Canchas
+  document.querySelectorAll('[data-edit-cancha]').forEach(b => b.addEventListener('click', () => openCanchaModal(b.dataset.editCancha)));
+  document.querySelectorAll('[data-delete-cancha]').forEach(b => b.addEventListener('click', () => confirmDeleteCancha(b.dataset.deleteCancha)));
+
+  // Equipos
+  document.querySelectorAll('[data-edit-equipo]').forEach(b => b.addEventListener('click', () => openEquipoModal(b.dataset.editEquipo)));
+  document.querySelectorAll('[data-delete-equipo]').forEach(b => b.addEventListener('click', () => confirmDeleteEquipo(b.dataset.deleteEquipo)));
+
+  // Filtros
+  ['fFecha','fDia','fCancha','fEstado','fEquipo','fHorario'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', e => {
+      const map = { fFecha:'fecha', fDia:'dia', fCancha:'cancha', fEstado:'estado', fEquipo:'equipo', fHorario:'horario' };
+      state.filters[map[id]] = e.target.value;
+      renderContent();
+    });
+  });
+  const clearBtn = document.getElementById('clearFilters');
+  if(clearBtn) clearBtn.addEventListener('click', () => { state.filters = { fecha:'', dia:'', cancha:'', estado:'', equipo:'', horario:'' }; renderContent(); });
+
+  // Calendario semanal
+  const wp = document.getElementById('weekPrev'), wn = document.getElementById('weekNext'), wt = document.getElementById('weekToday');
+  if(wp) wp.addEventListener('click', () => { state.weekStart = addDays(state.weekStart,-7); renderContent(); });
+  if(wn) wn.addEventListener('click', () => { state.weekStart = addDays(state.weekStart,7); renderContent(); });
+  if(wt) wt.addEventListener('click', () => { state.weekStart = startOfWeek(new Date()); renderContent(); });
+}
+
+/* =========================================================
+   MODALES: infraestructura genérica
+   ========================================================= */
+function openModal(html){
+  closeModal();
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.id = 'activeOverlay';
+  overlay.innerHTML = html;
+  overlay.addEventListener('mousedown', e => { if(e.target === overlay) closeModal(); });
+  document.body.appendChild(overlay);
+  document.querySelectorAll('[data-close-modal]').forEach(b => b.addEventListener('click', closeModal));
+  document.addEventListener('keydown', escCloseHandler);
+}
+function escCloseHandler(e){ if(e.key === 'Escape') closeModal(); }
+function closeModal(){
+  const ov = document.getElementById('activeOverlay');
+  if(ov) ov.remove();
+  document.removeEventListener('keydown', escCloseHandler);
+}
+
+function confirmModal(title, msg, onConfirm, confirmLabel){
+  openModal(`
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-head"><h3>${title}</h3><button class="modal-close" data-close-modal>${ICONS.x}</button></div>
+      <div class="modal-body confirm-body"><p>${msg}</p></div>
+      <div class="modal-foot">
+        <button class="btn" data-close-modal>Cancelar</button>
+        <button class="btn btn-danger" id="confirmActionBtn">${confirmLabel||'Eliminar'}</button>
+      </div>
+    </div>
+  `);
+  document.getElementById('confirmActionBtn').addEventListener('click', () => { onConfirm(); closeModal(); });
+}
+
+/* =========================================================
+   MODAL: TURNO (crear / editar)
+   ========================================================= */
+function openTurnoModal(id, prefill){
+  const turno = id ? DB.getAll('turnos').find(t => t.id === id) : Object.assign({
+    fecha: todayISO(), horaInicio:'', horaFin:'', canchaId:'', cantidadJugadores:'', cantidadEquipos:'2',
+    equipo1:'', equipo2:'', contacto:'', estado:'Reservado', observaciones:''
+  }, prefill||{});
+  const canchas = DB.getAll('canchas');
+  const equipos = DB.getAll('equipos');
+
+  if(!canchas.length){
+    showToast('Registrá al menos una cancha antes de crear un turno.', true);
+    return;
+  }
+
+  const renderForm = () => `
+    <div class="modal">
+      <div class="modal-head"><h3>${id ? 'Editar turno' : 'Nuevo turno'}</h3><button class="modal-close" data-close-modal>${ICONS.x}</button></div>
+      <div class="modal-body">
+        <div id="turnoFormAlert"></div>
+        <div class="field-row">
+          <div class="field"><label>Fecha</label><input type="date" id="tFecha" value="${turno.fecha}"></div>
+          <div class="field"><label>Día de la semana</label><input type="text" id="tDia" value="${turno.fecha ? nombreDia(turno.fecha) : ''}" disabled></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Hora inicio</label><input type="time" id="tHoraInicio" value="${turno.horaInicio}"></div>
+          <div class="field"><label>Hora fin</label><input type="time" id="tHoraFin" value="${turno.horaFin}"></div>
+        </div>
+        <div class="field"><label>Cancha</label>
+          <select id="tCancha">
+            <option value="">Seleccionar…</option>
+            ${canchas.map(c => `<option value="${c.id}" ${turno.canchaId===c.id?'selected':''}>${escapeHtml(c.nombre)} (cap. ${c.capacidad})</option>`).join('')}
+          </select>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Cantidad de jugadores</label><input type="number" min="0" id="tJugadores" value="${turno.cantidadJugadores}"></div>
+          <div class="field"><label>Cantidad de equipos</label>
+            <select id="tCantEquipos">
+              <option value="1" ${turno.cantidadEquipos=='1'?'selected':''}>1 (entrenamiento)</option>
+              <option value="2" ${turno.cantidadEquipos!='1'?'selected':''}>2 (partido)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Equipo 1</label>
+            <input type="text" id="tEquipo1" list="equiposList" value="${escapeHtml(turno.equipo1||'')}" placeholder="Nombre del equipo">
+          </div>
+          <div class="field" id="equipo2Wrap" style="${turno.cantidadEquipos=='1'?'display:none;':''}">
+            <label>Equipo 2</label>
+            <input type="text" id="tEquipo2" list="equiposList" value="${escapeHtml(turno.equipo2||'')}" placeholder="Nombre del equipo">
+          </div>
+        </div>
+        <datalist id="equiposList">${equipos.map(e=>`<option value="${escapeHtml(e.nombre)}">`).join('')}</datalist>
+        <div class="field"><label>Nombre o teléfono de quien reserva</label><input type="text" id="tContacto" value="${escapeHtml(turno.contacto||'')}"></div>
+        <div class="field"><label>Estado</label>
+          <select id="tEstado">${ESTADOS.map(e => `<option value="${e}" ${turno.estado===e?'selected':''}>${e}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>Observaciones</label><textarea id="tObs">${escapeHtml(turno.observaciones||'')}</textarea></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" data-close-modal>Cancelar</button>
+        <button class="btn btn-primary" id="saveTurnoBtn">Guardar turno</button>
+      </div>
+    </div>
+  `;
+
+  openModal(renderForm());
+
+  document.getElementById('tFecha').addEventListener('change', e => { document.getElementById('tDia').value = e.target.value ? nombreDia(e.target.value) : ''; });
+  document.getElementById('tCantEquipos').addEventListener('change', e => {
+    document.getElementById('equipo2Wrap').style.display = e.target.value === '1' ? 'none' : '';
+  });
+
+  document.getElementById('saveTurnoBtn').addEventListener('click', () => {
+    const data = {
+      fecha: document.getElementById('tFecha').value,
+      horaInicio: document.getElementById('tHoraInicio').value,
+      horaFin: document.getElementById('tHoraFin').value,
+      canchaId: document.getElementById('tCancha').value,
+      cantidadJugadores: document.getElementById('tJugadores').value,
+      cantidadEquipos: document.getElementById('tCantEquipos').value,
+      equipo1: document.getElementById('tEquipo1').value.trim(),
+      equipo2: document.getElementById('tCantEquipos').value==='1' ? '' : document.getElementById('tEquipo2').value.trim(),
+      contacto: document.getElementById('tContacto').value.trim(),
+      estado: document.getElementById('tEstado').value,
+      observaciones: document.getElementById('tObs').value.trim()
+    };
+    data.dia = data.fecha ? nombreDia(data.fecha) : '';
+
+    const alertBox = document.getElementById('turnoFormAlert');
+    alertBox.innerHTML = '';
+
+    if(!data.fecha || !data.horaInicio || !data.horaFin || !data.canchaId){
+      alertBox.innerHTML = `<div class="error-banner">Completá fecha, horario y cancha para continuar.</div>`;
+      return;
+    }
+    if(timeToMinutes(data.horaFin) <= timeToMinutes(data.horaInicio)){
+      alertBox.innerHTML = `<div class="error-banner">La hora de finalización debe ser posterior a la de inicio.</div>`;
+      return;
+    }
+    if(turnosSolapan(data.fecha, data.canchaId, data.horaInicio, data.horaFin, id)){
+      alertBox.innerHTML = `<div class="error-banner">Ya existe otro turno en esa cancha y horario. Elegí un horario distinto.</div>`;
+      return;
+    }
+    const capacidad = canchaCapacidad(data.canchaId);
+    if(capacidad && Number(data.cantidadJugadores) > Number(capacidad)){
+      // se guarda igual, pero se avisa
+      showToast(`Atención: superás la capacidad máxima de la cancha (${capacidad} jugadores).`, true);
+    }
+
+    if(id) DB.update('turnos', id, data);
+    else DB.create('turnos', data);
+
+    closeModal();
+    renderContent();
+    showToast(id ? 'Turno actualizado.' : 'Turno creado.');
+  });
+}
+
+function openTurnoDetalle(id){
+  const t = DB.getAll('turnos').find(x => x.id === id);
+  if(!t) return;
+  openModal(`
+    <div class="modal">
+      <div class="modal-head"><h3>Detalle del turno</h3><button class="modal-close" data-close-modal>${ICONS.x}</button></div>
+      <div class="modal-body">
+        <div class="row" style="margin-bottom:10px;">${estadoBadge(t.estado)}</div>
+        <div class="item-card" style="box-shadow:none;">
+          <div class="row"><span class="k">Fecha</span><span>${formatFechaCorta(t.fecha)} (${nombreDia(t.fecha)})</span></div>
+          <div class="row"><span class="k">Horario</span><span>${t.horaInicio} – ${t.horaFin}</span></div>
+          <div class="row"><span class="k">Cancha</span><span>${escapeHtml(canchaNombre(t.canchaId))}</span></div>
+          <div class="row"><span class="k">Equipos</span><span>${escapeHtml(t.equipo1||'—')}${t.equipo2?' vs '+escapeHtml(t.equipo2):''}</span></div>
+          <div class="row"><span class="k">Jugadores</span><span>${t.cantidadJugadores||'—'}</span></div>
+          <div class="row"><span class="k">Contacto</span><span>${escapeHtml(t.contacto||'—')}</span></div>
+          ${t.observaciones ? `<div class="row"><span class="k">Observaciones</span><span>${escapeHtml(t.observaciones)}</span></div>` : ''}
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Cambiar estado</label>
+          <select id="quickEstado">${ESTADOS.map(e => `<option value="${e}" ${t.estado===e?'selected':''}>${e}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-danger" id="cancelarTurnoBtn">Cancelar turno</button>
+        <button class="btn" id="editarDesdeDetalle">Editar</button>
+        <button class="btn btn-primary" id="guardarEstadoBtn">Guardar estado</button>
+      </div>
+    </div>
+  `);
+  document.getElementById('editarDesdeDetalle').addEventListener('click', () => { closeModal(); openTurnoModal(id); });
+  document.getElementById('cancelarTurnoBtn').addEventListener('click', () => {
+    DB.update('turnos', id, { estado:'Cancelado' });
+    closeModal(); renderContent(); showToast('Turno cancelado.');
+  });
+  document.getElementById('guardarEstadoBtn').addEventListener('click', () => {
+    const nuevo = document.getElementById('quickEstado').value;
+    DB.update('turnos', id, { estado: nuevo });
+    closeModal(); renderContent(); showToast('Estado actualizado.');
+  });
+}
+
+function confirmDeleteTurno(id){
+  confirmModal('Eliminar turno', '¿Seguro que querés eliminar este turno? Esta acción no se puede deshacer.', () => {
+    DB.remove('turnos', id); renderContent(); showToast('Turno eliminado.');
+  });
+}
+
+/* =========================================================
+   MODAL: CANCHA
+   ========================================================= */
+function openCanchaModal(id){
+  const c = id ? DB.getAll('canchas').find(x => x.id === id) : { nombre:'', numero:'', tipo:'Fútbol 5', capacidad:'', estado:'Disponible' };
+  openModal(`
+    <div class="modal" style="max-width:460px;">
+      <div class="modal-head"><h3>${id?'Editar cancha':'Nueva cancha'}</h3><button class="modal-close" data-close-modal>${ICONS.x}</button></div>
+      <div class="modal-body">
+        <div id="canchaFormAlert"></div>
+        <div class="field"><label>Nombre</label><input type="text" id="cNombre" value="${escapeHtml(c.nombre)}" placeholder="Cancha 1"></div>
+        <div class="field-row">
+          <div class="field"><label>Número</label><input type="number" min="1" id="cNumero" value="${c.numero}"></div>
+          <div class="field"><label>Tipo de cancha</label>
+            <select id="cTipo">
+              ${['Fútbol 5','Fútbol 7','Fútbol 8','Fútbol 11'].map(t => `<option ${c.tipo===t?'selected':''}>${t}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Capacidad máxima</label><input type="number" min="1" id="cCapacidad" value="${c.capacidad}"></div>
+          <div class="field"><label>Estado</label>
+            <select id="cEstado">
+              <option ${c.estado==='Disponible'?'selected':''}>Disponible</option>
+              <option ${c.estado==='No disponible'?'selected':''}>No disponible</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" data-close-modal>Cancelar</button>
+        <button class="btn btn-primary" id="saveCanchaBtn">Guardar cancha</button>
+      </div>
+    </div>
+  `);
+  document.getElementById('saveCanchaBtn').addEventListener('click', () => {
+    const data = {
+      nombre: document.getElementById('cNombre').value.trim(),
+      numero: document.getElementById('cNumero').value,
+      tipo: document.getElementById('cTipo').value,
+      capacidad: document.getElementById('cCapacidad').value,
+      estado: document.getElementById('cEstado').value
+    };
+    if(!data.nombre || !data.capacidad){
+      document.getElementById('canchaFormAlert').innerHTML = `<div class="error-banner">Completá al menos el nombre y la capacidad.</div>`;
+      return;
+    }
+    if(id) DB.update('canchas', id, data); else DB.create('canchas', data);
+    closeModal(); renderContent(); showToast(id?'Cancha actualizada.':'Cancha creada.');
+  });
+}
+
+function confirmDeleteCancha(id){
+  const enUso = DB.getAll('turnos').some(t => t.canchaId === id);
+  confirmModal('Eliminar cancha', enUso
+    ? 'Esta cancha tiene turnos asociados. Si la eliminás, esos turnos quedarán sin cancha asignada. ¿Continuar?'
+    : '¿Seguro que querés eliminar esta cancha?', () => {
+    DB.remove('canchas', id); renderContent(); showToast('Cancha eliminada.');
+  });
+}
+
+/* =========================================================
+   MODAL: EQUIPO
+   ========================================================= */
+function openEquipoModal(id){
+  const e = id ? DB.getAll('equipos').find(x => x.id === id) : { nombre:'', cantidadJugadores:'', responsable:'', telefono:'', observaciones:'' };
+  openModal(`
+    <div class="modal" style="max-width:460px;">
+      <div class="modal-head"><h3>${id?'Editar equipo':'Nuevo equipo'}</h3><button class="modal-close" data-close-modal>${ICONS.x}</button></div>
+      <div class="modal-body">
+        <div id="equipoFormAlert"></div>
+        <div class="field"><label>Nombre del equipo</label><input type="text" id="eNombre" value="${escapeHtml(e.nombre)}"></div>
+        <div class="field-row">
+          <div class="field"><label>Cantidad de jugadores</label><input type="number" min="0" id="eJugadores" value="${e.cantidadJugadores}"></div>
+          <div class="field"><label>Teléfono</label><input type="text" id="eTelefono" value="${escapeHtml(e.telefono||'')}"></div>
+        </div>
+        <div class="field"><label>Nombre del responsable</label><input type="text" id="eResponsable" value="${escapeHtml(e.responsable||'')}"></div>
+        <div class="field"><label>Observaciones</label><textarea id="eObs">${escapeHtml(e.observaciones||'')}</textarea></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" data-close-modal>Cancelar</button>
+        <button class="btn btn-primary" id="saveEquipoBtn">Guardar equipo</button>
+      </div>
+    </div>
+  `);
+  document.getElementById('saveEquipoBtn').addEventListener('click', () => {
+    const data = {
+      nombre: document.getElementById('eNombre').value.trim(),
+      cantidadJugadores: document.getElementById('eJugadores').value,
+      telefono: document.getElementById('eTelefono').value.trim(),
+      responsable: document.getElementById('eResponsable').value.trim(),
+      observaciones: document.getElementById('eObs').value.trim()
+    };
+    if(!data.nombre){
+      document.getElementById('equipoFormAlert').innerHTML = `<div class="error-banner">Ingresá el nombre del equipo.</div>`;
+      return;
+    }
+    if(id) DB.update('equipos', id, data); else DB.create('equipos', data);
+    closeModal(); renderContent(); showToast(id?'Equipo actualizado.':'Equipo creado.');
+  });
+}
+
+function confirmDeleteEquipo(id){
+  confirmModal('Eliminar equipo', '¿Seguro que querés eliminar este equipo? Los turnos ya cargados con su nombre no se modifican.', () => {
+    DB.remove('equipos', id); renderContent(); showToast('Equipo eliminado.');
+  });
+}
+
+/* =========================================================
+   AJUSTES (nombre, logo y reinicio de datos)
+   ========================================================= */
+function renderAjustesModal(){
+  const cfg = getConfig();
+  let pendingImage = cfg.logoImage || null;
+
+  openModal(`
+    <div class="modal" style="max-width:460px;">
+      <div class="modal-head"><h3>Ajustes</h3><button class="modal-close" data-close-modal>${ICONS.x}</button></div>
+      <div class="modal-body">
+        <div id="cfgAlert"></div>
+        <fieldset>
+          <legend>Nombre y logo</legend>
+          <div class="field"><label>Nombre del complejo</label><input type="text" id="cfgNombre" value="${escapeHtml(cfg.nombre)}"></div>
+          <div class="field">
+            <label>Logo</label>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div id="logoPreview" style="width:44px;height:44px;border-radius:10px;background:var(--gold);color:var(--pitch-deep);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0;">
+                ${cfg.logoImage ? `<img src="${cfg.logoImage}" style="width:100%;height:100%;object-fit:cover;">` : escapeHtml(cfg.logoEmoji || '⚽')}
+              </div>
+              <div style="flex:1;">
+                <input type="text" id="cfgEmoji" maxlength="4" placeholder="Un emoji, ej: 🍋" value="${escapeHtml(cfg.logoEmoji || '')}" style="margin-bottom:6px;">
+                <input type="file" id="cfgImagen" accept="image/*">
+              </div>
+            </div>
+            <p style="font-size:11.5px;color:var(--ink-soft);margin:8px 0 0;">Si subís una imagen, se usa esa en vez del emoji. El emoji es más liviano y se ve bien en cualquier tamaño.</p>
+          </div>
+        </fieldset>
+        <p style="font-size:13.5px;color:var(--ink-soft);line-height:1.5;">
+          Todos los datos (canchas, turnos y equipos) se guardan únicamente en este navegador.
+        </p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-danger" id="resetDataBtn">Borrar todos los datos</button>
+        <button class="btn btn-primary" id="saveCfgBtn">Guardar cambios</button>
+      </div>
+    </div>
+  `);
+
+  const preview = document.getElementById('logoPreview');
+  document.getElementById('cfgEmoji').addEventListener('input', e => {
+    pendingImage = null;
+    preview.innerHTML = escapeHtml(e.target.value || '⚽');
+  });
+  document.getElementById('cfgImagen').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      pendingImage = reader.result;
+      preview.innerHTML = `<img src="${pendingImage}" style="width:100%;height:100%;object-fit:cover;">`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('saveCfgBtn').addEventListener('click', () => {
+    const nombre = document.getElementById('cfgNombre').value.trim();
+    const emoji = document.getElementById('cfgEmoji').value.trim();
+    if(!nombre){
+      document.getElementById('cfgAlert').innerHTML = `<div class="error-banner">Ingresá un nombre para el complejo.</div>`;
+      return;
+    }
+    saveConfig({ nombre, logoEmoji: emoji || '⚽', logoImage: pendingImage });
+    closeModal();
+    render();
+    showToast('Cambios guardados.');
+  });
+
+  document.getElementById('resetDataBtn').addEventListener('click', () => {
+    closeModal();
+    confirmModal('Borrar todos los datos', 'Esto elimina canchas, turnos y equipos de forma permanente. ¿Continuar?', () => {
+      ['canchas','turnos','equipos','_seeded'].forEach(k => localStorage.removeItem(STORAGE_PREFIX+k));
+      DB.seedIfEmpty();
+      render();
+      showToast('Datos reiniciados.');
+    }, 'Borrar todo');
+  });
+}
+
+/* =========================================================
+   INICIO
+   ========================================================= */
+render();
+</script>
+</body>
+</html>
